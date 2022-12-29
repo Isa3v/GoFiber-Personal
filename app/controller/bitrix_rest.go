@@ -15,7 +15,7 @@ func (api *ControllerApi) GetBitrixRestCurrentParnerModules(c *fiber.Ctx) error 
 
 	// Если нашли кеш
 	if value, found := api.cache.Get(cacheKey); found {
-		return c.JSON(value.(marketplace.ResponseMap))
+		return c.JSON(value)
 	}
 
 	marketplaceClient, err := marketplace.New(marketplace.Config{
