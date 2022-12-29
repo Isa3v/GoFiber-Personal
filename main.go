@@ -1,7 +1,7 @@
 package main
 
 import (
-	api "isaev.digital.api/router"
+	"isaev.digital.api/router"
 
 	"flag"
 	"log"
@@ -44,7 +44,7 @@ func main() {
 
 	// Router
 	// Старт роутера
-	api.SetupRoutes(app)
+	router.SetupRoutes(app)
 
 	// Обработка 404
 	app.Use(func(c *fiber.Ctx) error {

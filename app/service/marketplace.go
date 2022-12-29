@@ -6,6 +6,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/url"
 
 	"github.com/valyala/fasthttp"
@@ -43,7 +44,7 @@ type ErrorMap struct {
 }
 
 // Вызываем маркетплейс
-func New(config ...Config) *Marketplace {
+func New(config ...Config) (*Marketplace, error) {
 	// Create a new app
 	marketplace := &Marketplace{
 		// Create config
@@ -62,16 +63,16 @@ func New(config ...Config) *Marketplace {
 
 	// Обязательные поля
 	if len(marketplace.config.ParnerCode) == 0 {
-		panic("ParnerCode is required in marketplace client")
+		return nil, fmt.Errorf("ParnerCode is required in marketplace client")
 	}
 
 	// Обязательные поля
 	if len(marketplace.config.PartnerId) == 0 {
-		panic("ParnerCode is required in marketplace client")
+		return nil, fmt.Errorf("ParnerCode is required in marketplace client")
 	}
 
 	// Return app
-	return marketplace
+	return marketplace, nil
 }
 
 func (marketplace *Marketplace) GetConfig() Config {
@@ -79,7 +80,7 @@ func (marketplace *Marketplace) GetConfig() Config {
 }
 
 // Get запрос к методам
-func (marketplace *Marketplace) Get(method string, params map[string]string) ResponseMap {
+func (marketplace *Marketplace) Get(method string, params map[string]string) (*ResponseMap, error) {
 	// Дефолтный url
 	urlParse, err := url.Parse(marketplace.config.BaseUrl)
 	if err != nil {
@@ -115,7 +116,7 @@ func (marketplace *Marketplace) Get(method string, params map[string]string) Res
 	// Вызываем клиент
 	client := &fasthttp.Client{}
 	if err := client.Do(req, res); err != nil {
-		panic(err.Error())
+		return nil, err
 	}
 
 	// Получем ответ body и конвертируем из json в map
@@ -123,7 +124,7 @@ func (marketplace *Marketplace) Get(method string, params map[string]string) Res
 	var jsonResult ResponseMap
 	json.Unmarshal(bodyBytes, &jsonResult)
 
-	return jsonResult
+	return &jsonResult, nil
 }
 
 // Функция собирает "токен" для запросов в маркетплейс
