@@ -5,10 +5,9 @@ package marketplace
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"net/url"
 
-	"github.com/goccy/go-json"
-	"github.com/pkg/errors"
 	"github.com/valyala/fasthttp"
 )
 
@@ -34,11 +33,17 @@ type Marketplace struct {
 // Структура ответа Rest битрикса
 type ResponseMap struct {
 	Result interface{} `json:"result"`
-	Error  interface{} `json:"error"`
+	Error  []ErrorMap  `json:"error"`
+}
+
+// Структура ошибки
+type ErrorMap struct {
+	ID   string `json:"id"`
+	CODE string `json:"code"`
 }
 
 // Вызываем маркетплейс
-func New(config ...Config) (*Marketplace, error) {
+func New(config ...Config) *Marketplace {
 	// Create a new app
 	marketplace := &Marketplace{
 		// Create config
@@ -57,16 +62,16 @@ func New(config ...Config) (*Marketplace, error) {
 
 	// Обязательные поля
 	if len(marketplace.config.ParnerCode) == 0 {
-		return nil, errors.New("ParnerCode is required in marketplace client")
+		panic("ParnerCode is required in marketplace client")
 	}
 
 	// Обязательные поля
 	if len(marketplace.config.PartnerId) == 0 {
-		return nil, errors.New("ParnerCode is required in marketplace client")
+		panic("ParnerCode is required in marketplace client")
 	}
 
 	// Return app
-	return marketplace, nil
+	return marketplace
 }
 
 func (marketplace *Marketplace) GetConfig() Config {
@@ -117,6 +122,7 @@ func (marketplace *Marketplace) Get(method string, params map[string]string) Res
 	bodyBytes := res.Body()
 	var jsonResult ResponseMap
 	json.Unmarshal(bodyBytes, &jsonResult)
+
 	return jsonResult
 }
 

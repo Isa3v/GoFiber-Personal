@@ -1,4 +1,4 @@
-project_name = boilerPlate
+project_name = isaev.digital.api
 image_name = gofiber:latest
 
 run-local:
