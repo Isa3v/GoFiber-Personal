@@ -1,6 +1,6 @@
 // Пакет позволяет работать с партнерским REST битрикса.
 // Все методы можно посмотреть тут: https://dev.1c-bitrix.ru/learning/course/index.php?COURSE_ID=133&INDEX=Y
-package marketplace
+package bitrix_marketplace
 
 import (
 	"crypto/md5"

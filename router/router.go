@@ -11,8 +11,9 @@ func SetupRoutes(app *fiber.App) {
 	v1 := app.Group("/api/v1")
 
 	// Инициализуем инстанс контроллера
-	apiController := handlers.New()
-
+	apiHandlers := handlers.New()
+	// Get career habr profile
+	v1.Get("/profile", apiHandlers.GetHabrRestProfile)
 	// Get marketplace modules
-	v1.Get("/modules/partner", apiController.GetBitrixRestCurrentParnerModules)
+	v1.Get("/modules/partner", apiHandlers.GetBitrixRestCurrentParnerModules)
 }

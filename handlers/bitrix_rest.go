@@ -3,7 +3,7 @@ package handlers
 import (
 	"os"
 
-	marketplace "isaev.digital.api/pkg/bitrix_marketplace"
+	"isaev.digital.api/pkg/bitrix_marketplace"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/patrickmn/go-cache"
@@ -18,7 +18,7 @@ func (api *HandlerApi) GetBitrixRestCurrentParnerModules(c *fiber.Ctx) error {
 		return c.JSON(value)
 	}
 
-	marketplaceClient, err := marketplace.New(marketplace.Config{
+	marketplaceClient, err := bitrix_marketplace.New(bitrix_marketplace.Config{
 		PartnerId:  os.Getenv("BITRIX_PARTNER_ID"),
 		ParnerCode: os.Getenv("BITRIX_PARTNER_CODE"),
 	})
