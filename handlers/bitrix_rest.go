@@ -1,15 +1,15 @@
-package controller
+package handlers
 
 import (
 	"os"
 
-	marketplace "isaev.digital.api/app/service"
+	marketplace "isaev.digital.api/pkg/bitrix_marketplace"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/patrickmn/go-cache"
 )
 
-func (api *ControllerApi) GetBitrixRestCurrentParnerModules(c *fiber.Ctx) error {
+func (api *HandlerApi) GetBitrixRestCurrentParnerModules(c *fiber.Ctx) error {
 	// Ключ для кеша
 	cacheKey := "api:bitrixrest:marketplace.product.list:currentPartner"
 

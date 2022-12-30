@@ -1,4 +1,4 @@
-package controller
+package handlers
 
 import (
 	"time"
@@ -6,13 +6,13 @@ import (
 	"github.com/patrickmn/go-cache"
 )
 
-type ControllerApi struct {
+type HandlerApi struct {
 	cache *cache.Cache // Инициализированный кеш
 }
 
 // Инстанс для api
-func New() *ControllerApi {
-	return &ControllerApi{
+func New() *HandlerApi {
+	return &HandlerApi{
 		cache: cache.New(30*time.Minute, 2*time.Hour),
 	}
 }
