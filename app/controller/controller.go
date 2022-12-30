@@ -13,6 +13,6 @@ type ControllerApi struct {
 // Инстанс для api
 func New() *ControllerApi {
 	return &ControllerApi{
-		cache: cache.New(5*time.Minute, 1*time.Hour),
+		cache: cache.New(30*time.Minute, 2*time.Hour),
 	}
 }
