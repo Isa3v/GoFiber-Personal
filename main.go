@@ -7,7 +7,6 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/joho/godotenv"
 )
@@ -40,7 +39,6 @@ func main() {
 		StackTraceHandler: recover.ConfigDefault.StackTraceHandler,
 	}
 	app.Use(recover.New(ConfigRecover))
-	app.Use(logger.New())
 
 	// Router
 	// Старт роутера
@@ -48,9 +46,9 @@ func main() {
 
 	// Обработка 404
 	app.Use(func(c *fiber.Ctx) error {
-		c.Status(fiber.StatusNotFound)
+		c.Status(fiber.StatusNotFound) // Отдаем 404 статус
 		return c.JSON(map[string]string{
-			"message": "Not Found",
+			"message": "Not Found", // default 404 response
 		})
 	})
 
