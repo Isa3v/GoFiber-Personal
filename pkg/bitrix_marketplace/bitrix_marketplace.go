@@ -33,8 +33,8 @@ type Marketplace struct {
 
 // Структура ответа Rest битрикса
 type ResponseMap struct {
-	Result interface{} `json:"result"`
-	Error  []ErrorMap  `json:"error"`
+	Result map[string]interface{} `json:"result"`
+	Error  []ErrorMap             `json:"error"`
 }
 
 // Структура ошибки
