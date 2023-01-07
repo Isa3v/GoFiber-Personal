@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/joho/godotenv"
 )
@@ -23,7 +24,7 @@ func main() {
 	// .env config
 	err := godotenv.Load()
 	if err != nil {
-		panic(`".env" file not found`)
+		log.Print(`".env" file not found`)
 	}
 
 	// Create fiber app
@@ -39,6 +40,7 @@ func main() {
 		StackTraceHandler: recover.ConfigDefault.StackTraceHandler,
 	}
 	app.Use(recover.New(ConfigRecover))
+	app.Use(logger.New())
 
 	// Router
 	// Старт роутера
