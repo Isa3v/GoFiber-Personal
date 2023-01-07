@@ -29,15 +29,15 @@ type BitrixPartnerModule struct {
 	VideoUrl                string        `json:"videoUrl"`
 }
 
-func (api *HandlerApi) GetBitrixRestCurrentParnerModules(c *fiber.Ctx) error {
-	// Ключ для кеша
-	cacheKey := "api:bitrixrest:marketplace.product.list:currentPartner"
+const cacheKey = "api:bitrixrest:marketplace.product.list:currentPartner" // Ключ для кеша
 
-	// Если нашли кеш
+func (api *HandlerApi) GetBitrixRestCurrentParnerModules(c *fiber.Ctx) error {
+	// Если нашли кеш, отдаем сразу
 	if value, found := api.cache.Get(cacheKey); found {
 		return c.JSON(value)
 	}
 
+	// Активируем клиент маркетплейса битрикса
 	marketplaceClient, err := bitrix_marketplace.New(bitrix_marketplace.Config{
 		PartnerId:  os.Getenv("BITRIX_PARTNER_ID"),
 		ParnerCode: os.Getenv("BITRIX_PARTNER_CODE"),
@@ -51,24 +51,26 @@ func (api *HandlerApi) GetBitrixRestCurrentParnerModules(c *fiber.Ctx) error {
 	params := map[string]string{}
 	params["filter[modulePartnerId]"] = marketplaceClient.GetConfig().PartnerId
 
+	// Получаем список модулей по фильтру (params)
+	var result interface{}
 	resultResponse, err := marketplaceClient.Get("marketplace.product.list", params)
-
 	if err != nil {
 		panic(err)
 	}
 
-	// Форматируем результат полученный с API
-	result := api.formatParnerModules(resultResponse.Result["list"].([]interface{}))
-
-	// Записываем кеш
-	api.cache.Set(cacheKey, result, 0)
-
-	// TODO при кеше что делаем?
+	// Проверяем ошибки
 	if len(resultResponse.Error) > 0 && len(resultResponse.Error[0].CODE) > 0 {
 		c.Status(400)
 		if resultResponse.Error[0].CODE == "ACTION_NOT_EXISTS" {
 			c.Status(404)
 		}
+
+		result = resultResponse
+	} else {
+		// Записываем кеш, если нет ошибок
+		// Форматируем результат полученный с API
+		result = api.formatParnerModules(resultResponse.Result["list"].([]interface{}))
+		api.cache.Set(cacheKey, result, 0)
 	}
 
 	return c.JSON(result)
@@ -78,15 +80,16 @@ func (api *HandlerApi) formatParnerModules(listModules []interface{}) []BitrixPa
 
 	// Создаем слайс с определенным кол-вом элементов
 	modulesPartnerList := make([]BitrixPartnerModule, len(listModules))
+
+	// Компилятор BB-кодов
 	bbcodeCompiler := bbcode.New()
 
+	// Переводим в структуру каждый элемент списка модулей
 	for i, val := range listModules {
 		if val != nil {
 			fields := val.(map[string]interface{})
 
 			modulesPartnerList[i] = BitrixPartnerModule{
-				BasePrice:               0,
-				Price:                   0,
 				Categories:              fields["categories"].([]interface{}),
 				Code:                    fields["code"].(string),
 				CompatibleEditions:      fields["compatibleEditions"].([]interface{}),
