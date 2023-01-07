@@ -20,8 +20,8 @@ FROM alpine:latest as release
 WORKDIR /app
 
 # Create the `public` dir and copy all the assets into it
-RUN mkdir ./static
-COPY ./static ./static
+# RUN mkdir ./static
+# COPY ./static ./static
 
 # `boilerplate` should be replaced here as well
 COPY --from=build /go/src/boilerplate/app .
@@ -34,4 +34,4 @@ RUN apk -U upgrade \
 # Exposes port 3000 because our program listens on that port
 EXPOSE 3000
 
-ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+ENTRYPOINT ["/usr/bin/dumb-init", "./app"]
