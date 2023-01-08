@@ -23,8 +23,8 @@ func main() {
 
 	// .env config
 	err := godotenv.Load()
-	if err != nil {
-		log.Print(`".env" file not found`)
+	if *prod == false && err != nil {
+		panic(`".env" file not found. See .env.example`)
 	}
 
 	// Create fiber app
