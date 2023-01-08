@@ -1,0 +1,42 @@
+image: docker:20.10.16
+services:
+    - docker:20.10.16-dind
+
+stages:
+    - build
+    - deploy
+
+before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - 'which ssh-agent || ( sudo apt install -qq openssh-client )'
+    - eval $(ssh-agent -s)
+    - ssh-add <(echo "$SSH_PRIVATE_KEY")
+    - mkdir -p ~/.ssh
+    - ssh-keyscan $PROD_SSH_HOST >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+
+build:
+    stage: build
+    script:
+        - docker build -t $CI_REGISTRY_IMAGE .
+        - docker push $CI_REGISTRY_IMAGE
+    only:
+        - main
+
+deploy:
+    stage: deploy
+    script:
+        - echo "Connect to server $PROD_SSH_HOST"
+        - |
+            ssh $PROD_SSH_USER@$PROD_SSH_HOST "
+              set -x -e
+              cd $PROD_SSH_DIR_DOCKER
+
+              sudo docker compose pull api
+              sudo docker compose kill api
+              sudo docker compose rm api -f
+              sudo docker compose up -d --build api
+              exit
+            "
+    only:
+        - main
