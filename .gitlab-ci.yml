@@ -21,22 +21,24 @@ build:
         - docker build -t $CI_REGISTRY_IMAGE .
         - docker push $CI_REGISTRY_IMAGE
     only:
-        - main
+        - master
 
 deploy:
     stage: deploy
     script:
-        - echo "Connect to server $PROD_SSH_HOST"
+        - echo "HOST SERVER - $PROD_SSH_HOST"
+        - echo "CI REGISTRY IMAGE - $CI_REGISTRY_IMAGE"
         - |
             ssh $PROD_SSH_USER@$PROD_SSH_HOST "
               set -x -e
               cd $PROD_SSH_DIR_DOCKER
 
-              sudo docker compose pull api
-              sudo docker compose kill api
-              sudo docker compose rm api -f
-              sudo docker compose up -d --build api
+              docker compose pull api
+              docker compose kill api
+              docker compose rm api -f
+              docker compose up -d --build api
+              docker image ls $CI_REGISTRY_IMAGE -f dangling=true -q | xargs --no-run-if-empty docker rmi
               exit
             "
     only:
-        - main
+        - master
