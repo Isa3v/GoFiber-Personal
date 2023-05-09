@@ -2,7 +2,7 @@ project_name = isaev.digital.api
 image_name = gofiber:latest
 
 run-local:
-	go run app.go
+	go run main.go
 
 requirements:
 	go mod tidy
