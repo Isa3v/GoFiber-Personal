@@ -1,13 +1,16 @@
 package handlers
 
 import (
+	"encoding/json"
+	"io/ioutil"
+	"log"
 	"os"
 	"strconv"
-
-	"isaev.digital.api/pkg/bbcode"
-	"isaev.digital.api/pkg/bitrix_marketplace"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"isaev.digital.api/pkg/bbcode"
+	"isaev.digital.api/pkg/bitrix_marketplace"
 )
 
 type BitrixPartnerModule struct {
@@ -29,54 +32,114 @@ type BitrixPartnerModule struct {
 	VideoUrl                string        `json:"videoUrl"`
 }
 
-const cacheKey = "api:bitrixrest:marketplace.product.list:currentPartner" // Ключ для кеша
+type BitrixApi struct {
+	fileStoragePath   string // Инициализированный кеш
+	marketplaceClient *bitrix_marketplace.Marketplace
+}
 
-func (api *HandlerApi) GetBitrixRestCurrentParnerModules(c *fiber.Ctx) error {
-	// Если нашли кеш, отдаем сразу
-	if value, found := api.cache.Get(cacheKey); found {
-		return c.JSON(value)
-	}
-
-	// Активируем клиент маркетплейса битрикса
+func BitrixInit() *BitrixApi {
+	// Создаем подключение к Bitrix
 	marketplaceClient, err := bitrix_marketplace.New(bitrix_marketplace.Config{
 		PartnerId:  os.Getenv("BITRIX_PARTNER_ID"),
 		ParnerCode: os.Getenv("BITRIX_PARTNER_CODE"),
 	})
-
 	if err != nil {
 		panic(err)
 	}
 
+	// Инициализуем кеш
+	api := &BitrixApi{
+		fileStoragePath:   "storage/bitrix",
+		marketplaceClient: marketplaceClient,
+	}
+
+	// Создаем директорию, если ее еще нет
+	os.MkdirAll(api.fileStoragePath, os.ModePerm)
+
+	// Читаем данные из файла
+	_, err = ioutil.ReadFile(api.fileStoragePath + "/modules.json")
+	if err != nil {
+		_, err := api.getData()
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	// Через опредленный период обновляем кеш в файле
+	go func() {
+		for {
+			time.Sleep(24 * time.Hour)
+			log.Print("Обновляем кеш...")
+			// Получаем данные по авторизации на habr
+			_, err := api.getData()
+			if err != nil {
+				panic(err)
+			}
+		}
+	}()
+
+	return api
+}
+
+func (api *BitrixApi) Get(c *fiber.Ctx) error {
+	// Читаем данные из файла
+	data, err := ioutil.ReadFile(api.fileStoragePath + "/modules.json")
+	if err != nil {
+		data, err = api.getData()
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	// Разбираем в JSON
+	var value []interface{}
+	err = json.Unmarshal(data, &value)
+	if err != nil {
+		panic(err)
+	}
+
+	return c.JSON(value)
+}
+
+func (api *BitrixApi) getData() ([]byte, error) {
 	// Параметры запроса
 	params := map[string]string{}
-	params["filter[modulePartnerId]"] = marketplaceClient.GetConfig().PartnerId
+	params["filter[modulePartnerId]"] = api.marketplaceClient.GetConfig().PartnerId
 
 	// Получаем список модулей по фильтру (params)
 	var result interface{}
-	resultResponse, err := marketplaceClient.Get("marketplace.product.list", params)
+	resultResponse, err := api.marketplaceClient.Get("marketplace.product.list", params)
 	if err != nil {
 		panic(err)
 	}
 
 	// Проверяем ошибки
 	if len(resultResponse.Error) > 0 && len(resultResponse.Error[0].CODE) > 0 {
-		c.Status(400)
-		if resultResponse.Error[0].CODE == "ACTION_NOT_EXISTS" {
-			c.Status(404)
-		}
+		// error
+	}
+	// Записываем кеш, если нет ошибок
+	// Форматируем результат полученный с API
+	result = api.formatParnerModules(resultResponse.Result["list"].([]interface{}))
 
-		result = resultResponse
-	} else {
-		// Записываем кеш, если нет ошибок
-		// Форматируем результат полученный с API
-		result = api.formatParnerModules(resultResponse.Result["list"].([]interface{}))
-		api.cache.Set(cacheKey, result, 0)
+	// Разбираем в JSON
+	// convert the map to JSON
+	moduleData, err := json.Marshal(result)
+	if err != nil {
+		panic(err)
 	}
 
-	return c.JSON(result)
+	// Создаем директорию, если ее еще нет
+	os.MkdirAll(api.fileStoragePath, os.ModePerm)
+
+	// Записываем JSON в файл
+	err = ioutil.WriteFile(api.fileStoragePath+"/modules.json", moduleData, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+	return moduleData, nil
 }
 
-func (api *HandlerApi) formatParnerModules(listModules []interface{}) []BitrixPartnerModule {
+func (api *BitrixApi) formatParnerModules(listModules []interface{}) []BitrixPartnerModule {
 
 	// Создаем слайс с определенным кол-вом элементов
 	modulesPartnerList := make([]BitrixPartnerModule, len(listModules))
